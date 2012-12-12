@@ -1,5 +1,3 @@
-# peaksware-quiz
-
 # Peaksware JS Quiz
 
 1	Using a MVC/MVVM/Module framework of your choice (existing Open Source like BackboneJS, Knockout, JavascriptMVC, etc, or your own self-spun framework/modules), create a client application to graphically display workout performance data on a canvas-based graph and display a GPS path on a tile-based map.
