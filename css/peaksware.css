@@ -1,0 +1,270 @@
+/* =======================================================================
+ * NAME: peaksware.css
+ * AUTH: Scott Shattuck (ss)
+ * NOTE: Copyright (C) 2012 Scott Shattuck, All Rights Reserved.
+ *       Portions Copyright (c) 2010, Yahoo! Inc. All rights reserved.
+ * ----------------------------------------------------------------------- */
+
+/* =======================================================================
+ * Global CSS baseline (reset, fonts, base) from yui3
+ * ----------------------------------------------------------------------- */
+
+/*
+Copyright (c) 2010, Yahoo! Inc. All rights reserved.
+Code licensed under the BSD License:
+http://developer.yahoo.com/yui/license.html
+version: 3.3.0
+build: 3167
+*/
+html{color:#000;background:#FFF;}body,div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,h5,h6,pre,code,form,fieldset,legend,input,textarea,p,blockquote,th,td{margin:0;padding:0;}table{border-collapse:collapse;border-spacing:0;}fieldset,img{border:0;}address,caption,cite,code,dfn,em,strong,th,var{font-style:normal;font-weight:normal;}li{list-style:none;}caption,th{text-align:left;}h1,h2,h3,h4,h5,h6{font-size:100%;font-weight:normal;}q:before,q:after{content:'';}abbr,acronym{border:0;font-variant:normal;}sup{vertical-align:text-top;}sub{vertical-align:text-bottom;}input,textarea,select{font-family:inherit;font-size:inherit;font-weight:inherit;}input,textarea,select{*font-size:100%;}legend{color:#000;}
+body{font:13px/1.231 arial,helvetica,clean,sans-serif;*font-size:small;*font:x-small;}select,input,button,textarea{font:99% arial,helvetica,clean,sans-serif;}table{font-size:inherit;font:100%;}pre,code,kbd,samp,tt{font-family:monospace;*font-size:108%;line-height:100%;}
+h1{font-size:138.5%;}h2{font-size:123.1%;}h3{font-size:108%;}h1,h2,h3{margin:1em 0;}h1,h2,h3,h4,h5,h6,strong{font-weight:bold;}abbr,acronym{border-bottom:1px dotted #000;cursor:help;}em{font-style:italic;}blockquote,ul,ol,dl{margin:1em;}ol,ul,dl{margin-left:2em;}ol li{list-style:decimal outside;}ul li{list-style:disc outside;}dl dd{margin-left:1em;}th,td{border:1px solid #000;padding:.5em;}th{font-weight:bold;text-align:center;}caption{margin-bottom:.5em;text-align:center;}p,fieldset,table,pre{margin-bottom:1em;}input[type=text],input[type=password],textarea{width:12.25em;*width:11.9em;}
+
+/* =======================================================================
+ * Local CSS baseline (reset, fonts, base)
+ * ----------------------------------------------------------------------- */
+
+* {
+  font-family: "Open Sans";
+  font-size: 93%;
+}
+
+/*
+For pixels (px) Declare this percent (%)
+10   77
+11   85
+12   93
+13   100
+14   108
+15   116
+16   123.1
+17   131
+18   138.5
+19   146.5
+20   153.9
+21   161.6
+22   167
+23   174
+24   182
+25   189
+26   197
+*/
+
+/* =======================================================================
+ * Color scheme:
+ *
+ *  ffffff  fff      LIGHT
+ *  000000  000      DARK
+ *
+ *  efefef           LIGHT_BG
+ *  1E558B           MED_BG
+ *  222222  222      DARK_BG
+ *
+ *  aaaaaa  AAA      LIGHT_TXT (Light grey text color)
+ *  005695           MED_TXT ("Peaks" text color)
+ *  00264C           DARK_TXT ("Training" text color)
+ *  cccccc  CCC      BLACK_TXT ("Off black" text color)
+ *
+ * ----------------------------------------------------------------------- */
+
+.noselect {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+  cursor: default;
+}
+
+/* =======================================================================
+ * Page "Framing"
+ * ----------------------------------------------------------------------- */
+
+#bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  background-color: #fff;
+  overflow: hidden;
+}
+
+#header {
+  position: absolute;
+  height: 48px;
+  width: 100%;
+  top: 0;
+  background-color: #efefef;
+  color: #5f7100;
+  border-bottom: 2px solid #00264C;
+}
+
+#content {
+  position: absolute;
+  width: 100%;
+  top: 51px;
+  bottom: 32px;
+  height: auto;
+}
+
+#footer {
+  position: absolute;
+  width: 100%;
+  height: 28px;
+  bottom: 0;
+  background-color: #efefef;
+  border-top: 2px solid #00264C;
+  color: #fff;
+}
+
+/* =======================================================================
+ * Header styles.
+ * ----------------------------------------------------------------------- */
+
+#logo {
+  position: absolute;
+  top: 6px;
+  left: 12px;
+  height: 41px;
+  width: 282px;
+}
+
+#title {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 48px;
+  line-height: 48px;
+  width: auto;
+  cursor: none;
+}
+
+.appname {
+  position: absolute;
+  top: 0;
+  right: 12px;
+  font-size: 182%;
+  line-height: 48px;
+  height: 48px;
+  width: auto;
+  text-align: right;
+  font-weight: bold;
+  font-style: italic;
+  color: #00264C;
+}
+
+/* =======================================================================
+ * Content styles.
+ * ----------------------------------------------------------------------- */
+
+#splash {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0; 
+  width: 100%;
+  height: 100%;
+  z-index: 10;       /* raise above dashboard layers */
+} 
+
+#splash p {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  height: 128px;
+  margin-top: -64px;
+  margin-left: -200px;
+  text-align: center;
+  font-size: 182%;
+}
+
+#dashboard {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0; 
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+}
+
+#controls {
+  position: absolute;
+  top: 0;
+  right: auto;
+  bottom: 0;
+  left: 0; 
+  width: 24px;
+  height: 100%;
+  z-index: 1;       /* raise above map and chart layers */
+}
+
+#visuals {
+  position: absolute;
+  top: 1px;
+  right: 25px;
+  bottom: 1px;
+  left: 25px;
+  height: auto;
+  width: auto;
+  border: 1px solid #222;
+}
+
+#chart {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: auto;
+  left: 0;
+  height: 50%;
+  width: 100%; 
+}
+
+#map {
+  position: absolute;
+  top: auto;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 50%;
+  width: 100%;
+  border-top: 1px solid #222;
+}
+
+#internals {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: auto;
+  width: 24px;
+  height: 100%;
+  z-index: 1;       /* raise above map and chart layers */
+}
+
+/* =======================================================================
+ * Footer styles.
+ * ----------------------------------------------------------------------- */
+
+#log {
+  position: absolute;
+  top: 0;
+  right: 25px;
+  bottom: 0;
+  left: 25px; 
+  width: auto;
+  height: 100%;
+  line-height: 24px;
+  font-size: 93%;
+  color: #999;
+  overflow: hidden;
+}
+
+/* ======================================================================= */

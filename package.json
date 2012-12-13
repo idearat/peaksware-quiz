@@ -1,0 +1,12 @@
+{
+  "name": "Peaksware-Quiz",
+  "version": "0.0.1",
+  "dependencies": {
+    "connect" : "1",
+    "d3" : "2",
+    "mocha": "0"
+  },
+  "engines" : {
+      "node" : "0.6"
+  }
+}
