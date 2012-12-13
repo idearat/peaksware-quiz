@@ -855,11 +855,11 @@ Averager.prototype.compute = function(callback) {
 
 		if (callback) {
 			// NOTE the arrays here to simulate a single worker result.
-			LOG = PQ.DEBUG ? log('averaging completed in ' + 
+			LOG = PQ.DEBUG ? log('averaging completed in ' +
 				(end - this._computeStart) + 'ms.') : 0;
 			callback([result]);
 		} else {
-			LOG = PQ.DEBUG ? log('averaging completed in ' + 
+			LOG = PQ.DEBUG ? log('averaging completed in ' +
 				(end - this._computeStart) + 'ms.') : 0;
 			return [result];
 		}
@@ -923,7 +923,7 @@ Averager.prototype.handleWorkerComplete = function(worker, evt) {
 	if (this._results.length === this._workers.length) {
 
 		end = (new Date()).getTime();
-		LOG = PQ.DEBUG ? log('averaging completed in ' + 
+		LOG = PQ.DEBUG ? log('averaging completed in ' +
 			(end - this._computeStart) + 'ms.') : 0;
 
 		// Protect ourselves from bad callback functions.

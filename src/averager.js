@@ -6,20 +6,20 @@
 */
 //  =========================================================================== 
 
-/*jslint anon:true, nomen:true, plusplus:true, continue:true */
-/*globals google, d3, $ */
+/*jslint anon:true, plusplus:true */
+/*globals postMessage, addEventListener */
 
 'use strict';
 
 //  --------------------------------------------------------------------------- 
 
 /**
- * Handles inbound messages from the main thread sent via postMessage.
- * @param {MessageEvent} evt The inbound message.
+ * Writes a message back to the main thread via postMessage.
+ * @param {String} msg A JSON string containing the desired message content.
  */
-function messageHandler(evt) {
-	compute(JSON.parse(evt.data));
-};
+function done(msg) {
+	postMessage(msg);
+}
 
 /**
  * Computes the average for the data provided.
@@ -51,15 +51,15 @@ function compute(data) {
 }
 
 /**
- * Writes a message back to the main thread via postMessage.
- * @param {String} msg A JSON string containing the desired message content.
+ * Handles inbound messages from the main thread sent via postMessage.
+ * @param {MessageEvent} evt The inbound message.
  */
-function done(msg) {
-	postMessage(msg);
+function messageHandler(evt) {
+	compute(JSON.parse(evt.data));
 }
 
 // Register the event handler or we'll sit quietly waiting forever :).
-this.addEventListener('message', messageHandler, false);
+addEventListener('message', messageHandler, false);
 
 //  ===========================================================================
 //  end
