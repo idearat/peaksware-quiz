@@ -756,17 +756,20 @@ Averager.DEFAULT = {
  */
 Averager.prototype.createWorker = function(slice) {
 	var worker,
+		index,
 		my;
 
 	// Hold a reference to support lazy "binding" in our closure below.
 	my = this;
 
 	worker = new Worker(Averager.DEFAULT.URL);
+	index = this._workers.length;
+	worker.index = index;
 	worker.addEventListener('message', function(evt) {
 		my.handleWorkerComplete(worker, evt);
 	}, false);
 
-	LOG = PQ.DEBUG ? log('worker ' + this._workers.length + ' created') : 0;
+	LOG = PQ.DEBUG ? log('worker ' + index + ' created') : 0;
 
 	this._workers.push(worker);
 	worker.postMessage(JSON.stringify(slice));
@@ -778,12 +781,31 @@ Averager.prototype.createWorker = function(slice) {
 
 /**
  * Computes the final result from the individual thread results.
- * @return {Number} The collated average.
+ * @return {Array.<Number>} The collated averages.
  */
 Averager.prototype.collateResults = function() {
-	// TODO
-	// Of course.
-	return 42;
+	var results,
+		arr,
+		len,
+		i,
+		j,
+		sum,
+		count;
+
+	results = this._results;
+	arr = [];
+	sum = 0;
+	count = 0;
+	len = results.length;
+	for (i = 0; i < len; i++) {
+		for (j = 0; j <= i; j++) {
+			sum += results[i].sum;
+			count += results[i].count;
+		}
+		arr.push(sum / count);
+	}
+
+	return arr;
 };
 
 //  --------------------------------------------------------------------------- 
@@ -804,7 +826,7 @@ Averager.prototype.compute = function(callback) {
 		avg,
 		val;
 
-	// Without workers just compute manually :(.
+	// Without workers just compute manually.
 	if (!window.Worker) {
 		data = this._data;
 		len = data.length;
@@ -819,7 +841,7 @@ Averager.prototype.compute = function(callback) {
 			sum: sum
 		};
 		if (callback) {
-			// NOTE the array here to simulate a single worker result.
+			// NOTE the arrays here to simulate a single worker result.
 			callback([result]);
 		} else {
 			return [result];
@@ -830,6 +852,11 @@ Averager.prototype.compute = function(callback) {
 		throw new Error('Averager busy');
 	}
 	this._busy = true;
+
+	// Clear any prior results/workers before moving on. By doing it here rather
+	// than on completion we make it easier to debug.
+	this._results.length = 0;
+	this._workers.length = 0;
 
 	// Hold reference to call when we're complete.
 	this._callback = callback;
@@ -851,24 +878,10 @@ Averager.prototype.compute = function(callback) {
 /**
  * Returns the index of a worker instance.
  * @param {Worker} worker The worker instance to locate.
- * @return {Number} The worker index, or -1 if not found.
+ * @return {Number} The worker index.
  */
 Averager.prototype.getWorkerIndex = function(worker) {
-	var i,
-		len,
-		workers;
-
-	workers = this._workers;
-	len = workers.len;
-
-	for (i = 0; i < len; i++) {
-		if (workers[i] === worker) {
-			return i;
-		}
-	}
-
-	// The quintessential NOT_FOUND for JavaScript.
-	return -1;
+	return worker.index;
 };
 
 //  --------------------------------------------------------------------------- 
@@ -894,12 +907,10 @@ Averager.prototype.handleWorkerComplete = function(worker, evt) {
 		// Protect ourselves from bad callback functions.
 		try {
 			if (this._callback) {
-				this._callback(this._results);
+				this._callback(this.collateResults());
 			}
 		} finally {
 			this._busy = false;
-			this._results.length = 0;
-			this._workers.length = 0;
 		}
 	}
 };
@@ -1028,6 +1039,12 @@ PQ.DEFAULT = {
 //  --------------------------------------------------------------------------- 
 
 /**
+ * The Averager helper instance used to calculate averages.
+ * @type {Averager}
+ */
+PQ.averager = null;
+
+/**
  * The Chart helper instance used to encapsulate chart rendering.
  * @type {Chart}
  */
@@ -1056,10 +1073,8 @@ PQ.map = null;
  * @param {Array} data The slice of data to process.
  */
 PQ.average = function(data, callback) {
-	var averager;
-
-	averager = new Averager(data);
-	averager.compute(callback);
+	PQ.averager = new Averager(data);
+	PQ.averager.compute(callback);
 };
 
 //  --------------------------------------------------------------------------- 
@@ -1264,26 +1279,13 @@ PQ.render = function(slice) {
 	this.average(arr.slice(0, 60), function(results) {
 
 		// Save first minute result.
-		out.push((results[0].sum / results[0].count).toFixed(2));
+		out.push(results[0].toFixed(2));
 
 		// Compute five minute averages and output them.
 		my.average(arr, function(results) {
-			var len,
-				i,
-				j,
-				sum,
-				count;
-
-			sum = 0;
-			count = 0;
-			len = results.length;
-			for (i = 0; i < len; i++) {
-				for (j = 0; j <= i; j++) {
-					sum += results[i].sum;
-					count += results[i].count;
-				}
-				out.push((sum / count).toFixed(2));
-			}
+			results.map(function(avg) {
+				out.push(avg.toFixed(2));
+			});
 
 			log('Average ' + key + ' at 1, 5, 10, 15, and 20 minutes: ' +
 				out.join(', ') + ' respectively.');
