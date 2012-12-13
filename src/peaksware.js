@@ -7,7 +7,7 @@
 //  =========================================================================== 
 
 /*jslint anon:true, nomen:true, plusplus:true, continue:true */
-/*globals google, d3, $ */
+/*globals google, d3, $, Worker */
 
 // Encapsulate file content as a closure to maintain privacy of internals.
 (function(root) {
@@ -680,6 +680,242 @@ Mapper.prototype.render = function(dataset, slice) {
 };
 
 //  =========================================================================== 
+//  Averager Helper Class
+//  =========================================================================== 
+
+/**
+ * Computes averages across a large dataset by leveraging individual Web Workers
+ * to compute averages for slices. The partial result sets are then merged back
+ * together to produce the final result.
+ * @param {Array} data The array of numbers to average.
+ * @param {Number} chunk_size The size of each subset of data.
+ * @constructor
+ */
+function Averager(data) {
+
+	if (!data) {
+		throw new Error('Invalid dataset');
+	}
+
+	/**
+	 * Flag controlling when the instance is already busy computing a result.
+	 * @type {Boolean}
+	 */
+	this._busy = false;
+
+	/**
+	 * An optional callback function to invoke when compute operations finish.
+	 * @type {Function}
+	 */
+	this._callback = null;
+
+	/**
+	 * The number of items in each chunk to be processed by a worker.
+	 * @type {Number}
+	 */
+	this._chunkSize = null;
+
+	/**
+	 * The array of numbers to compute an overall average for.
+	 * @type {Array.<Number>}
+	 */
+	this._data = data;
+
+	/**
+	 * The individual results from the various worker threads.
+	 * @type {Array.<Object>}
+	 */
+	this._results = [];
+
+	/**
+	 * The current worker instances being monitored for computation.
+	 * @type {Array.<Object>}
+	 */
+	this._workers = [];
+
+	return this;
+}
+
+//  --------------------------------------------------------------------------- 
+
+/**
+ * Dictionary of default values for the type.
+ * @enum {Object}
+ */
+Averager.DEFAULT = {
+	CHUNK: 300,
+	URL: '/src/averager.js'
+};
+
+//  --------------------------------------------------------------------------- 
+
+/**
+ * Creates a worker for a particular slice of data and starts it running.
+ * @param {Array.<Number>} slice The slice to compute an average for.
+ * @return {Worker} The web worker instance.
+ */
+Averager.prototype.createWorker = function(slice) {
+	var worker,
+		my;
+
+	// Hold a reference to support lazy "binding" in our closure below.
+	my = this;
+
+	worker = new Worker(Averager.DEFAULT.URL);
+	worker.addEventListener('message', function(evt) {
+		my.handleWorkerComplete(worker, evt);
+	}, false);
+
+	LOG = PQ.DEBUG ? log('worker ' + this._workers.length + ' created') : 0;
+
+	this._workers.push(worker);
+	worker.postMessage(JSON.stringify(slice));
+
+	return worker;
+};
+
+//  --------------------------------------------------------------------------- 
+
+/**
+ * Computes the final result from the individual thread results.
+ * @return {Number} The collated average.
+ */
+Averager.prototype.collateResults = function() {
+	// TODO
+	// Of course.
+	return 42;
+};
+
+//  --------------------------------------------------------------------------- 
+
+/**
+ * Initiates computation of an average for the current data.
+ * @param {Function} callback An optional callback to invoke with the final
+ *     result of the computation.
+ */
+Averager.prototype.compute = function(callback) {
+	var chunk,
+		slice,
+		data,
+		result,
+		i,
+		len,
+		sum,
+		avg,
+		val;
+
+	// Without workers just compute manually :(.
+	if (!window.Worker) {
+		data = this._data;
+		len = data.length;
+		for (i = 0; i < len; i++) {
+			val = data[i];
+			if (val !== null) {
+				sum += val;
+			}
+		}
+		result = {
+			count: len,
+			sum: sum
+		};
+		if (callback) {
+			// NOTE the array here to simulate a single worker result.
+			callback([result]);
+		} else {
+			return [result];
+		}
+	}
+
+	if (this._busy) {
+		throw new Error('Averager busy');
+	}
+	this._busy = true;
+
+	// Hold reference to call when we're complete.
+	this._callback = callback;
+
+	chunk = this._chunkSize || Averager.DEFAULT.CHUNK;
+
+	// Make a copy so we don't splice the original to create chunks.
+	data = this._data.slice(0);
+
+	slice = data.splice(0, chunk);
+	while (slice.length > 0) {
+		this.createWorker(slice);
+		slice = data.splice(0, chunk);
+	}
+};
+
+//  --------------------------------------------------------------------------- 
+
+/**
+ * Returns the index of a worker instance.
+ * @param {Worker} worker The worker instance to locate.
+ * @return {Number} The worker index, or -1 if not found.
+ */
+Averager.prototype.getWorkerIndex = function(worker) {
+	var i,
+		len,
+		workers;
+
+	workers = this._workers;
+	len = workers.len;
+
+	for (i = 0; i < len; i++) {
+		if (workers[i] === worker) {
+			return i;
+		}
+	}
+
+	// The quintessential NOT_FOUND for JavaScript.
+	return -1;
+};
+
+//  --------------------------------------------------------------------------- 
+
+/**
+ * Handles notifications from individual workers that they are finished.
+ * @param {Worker} worker The worker which has completed.
+ * @param {Object} evt The worker "event" (aka message).
+ */
+Averager.prototype.handleWorkerComplete = function(worker, evt) {
+	var index,
+		result;
+
+	index = this.getWorkerIndex(worker);
+	LOG = PQ.DEBUG ? log('worker ' + index + ' complete') : 0;
+
+	result = JSON.parse(evt.data);
+	this._results.push(result);
+
+	// If all workers have reported in we're done.
+	if (this._results.length === this._workers.length) {
+
+		// Protect ourselves from bad callback functions.
+		try {
+			if (this._callback) {
+				this._callback(this._results);
+			}
+		} finally {
+			this._busy = false;
+			this._results.length = 0;
+			this._workers.length = 0;
+		}
+	}
+};
+
+//  --------------------------------------------------------------------------- 
+
+/**
+ * Sets the chunk size used in computations. The default is
+ * Averager.DEFAULT.CHUNK number of items.
+ * @param {Number} size The chunk size to use.
+ */
+Averager.prototype.setChunkSize = function(size) {
+	this._chunkSize = size;
+};
+
+//  =========================================================================== 
 //  PeakswareQuiz (PQ) Application Controller
 //  =========================================================================== 
 
@@ -813,6 +1049,19 @@ PQ.map = null;
 
 //  --------------------------------------------------------------------------- 
 //	Static Methods
+//  --------------------------------------------------------------------------- 
+
+/**
+ * Compute an average for slices of the dataset using a threaded Averager.
+ * @param {Array} data The slice of data to process.
+ */
+PQ.average = function(data, callback) {
+	var averager;
+
+	averager = new Averager(data);
+	averager.compute(callback);
+};
+
 //  --------------------------------------------------------------------------- 
 
 /**
@@ -980,7 +1229,11 @@ PQ.handleSelectionChange = function(x1, x2) {
  */
 PQ.render = function(slice) {
 	var dataset,
-		key;
+		key,
+		list,
+		arr,
+		out,
+		my;
 
 	dataset = this.dataset;
 	key = slice || PQ.DEFAULT.SLICE;
@@ -993,6 +1246,49 @@ PQ.render = function(slice) {
 
 	this.chart.render(dataset, key);
 	this.map.render(dataset);
+
+	// NOTE that for averaging purposes we'll process the first twenty minutes
+	// (1200 seconds) of data.
+	arr = [];
+	list = dataset.getDataPoints().slice(0, 1200);
+	list.map(function(d) {
+		arr.push(d[key]);
+	});
+
+	out = [];
+
+	// Hold a reference to support lazy "binding" in our closure below.
+	my = this;
+
+	// Compute one minute average.
+	this.average(arr.slice(0, 60), function(results) {
+
+		// Save first minute result.
+		out.push((results[0].sum / results[0].count).toFixed(2));
+
+		// Compute five minute averages and output them.
+		my.average(arr, function(results) {
+			var len,
+				i,
+				j,
+				sum,
+				count;
+
+			sum = 0;
+			count = 0;
+			len = results.length;
+			for (i = 0; i < len; i++) {
+				for (j = 0; j <= i; j++) {
+					sum += results[i].sum;
+					count += results[i].count;
+				}
+				out.push((sum / count).toFixed(2));
+			}
+
+			log('Average ' + key + ' at 1, 5, 10, 15, and 20 minutes: ' +
+				out.join(', ') + ' respectively.');
+		});
+	});
 };
 
 //  =========================================================================== 
