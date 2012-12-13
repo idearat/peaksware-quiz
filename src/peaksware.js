@@ -716,6 +716,12 @@ function Averager(data) {
 	this._chunkSize = null;
 
 	/**
+	 * The millisecond time a compute cycle started.
+	 * @type {Number}
+	 */
+	this._computeStart = null;
+
+	/**
 	 * The array of numbers to compute an overall average for.
 	 * @type {Array.<Number>}
 	 */
@@ -824,7 +830,11 @@ Averager.prototype.compute = function(callback) {
 		len,
 		sum,
 		avg,
-		val;
+		val,
+		end;
+
+	this._computeStart = (new Date()).getTime();
+	LOG = PQ.DEBUG ? log('averaging data slice') : 0;
 
 	// Without workers just compute manually.
 	if (!window.Worker) {
@@ -840,10 +850,17 @@ Averager.prototype.compute = function(callback) {
 			count: len,
 			sum: sum
 		};
+
+		end = (new Date()).getTime();
+
 		if (callback) {
 			// NOTE the arrays here to simulate a single worker result.
+			LOG = PQ.DEBUG ? log('averaging completed in ' + 
+				(end - this._computeStart) + 'ms.') : 0;
 			callback([result]);
 		} else {
+			LOG = PQ.DEBUG ? log('averaging completed in ' + 
+				(end - this._computeStart) + 'ms.') : 0;
 			return [result];
 		}
 	}
@@ -893,7 +910,8 @@ Averager.prototype.getWorkerIndex = function(worker) {
  */
 Averager.prototype.handleWorkerComplete = function(worker, evt) {
 	var index,
-		result;
+		result,
+		end;
 
 	index = this.getWorkerIndex(worker);
 	LOG = PQ.DEBUG ? log('worker ' + index + ' complete') : 0;
@@ -903,6 +921,10 @@ Averager.prototype.handleWorkerComplete = function(worker, evt) {
 
 	// If all workers have reported in we're done.
 	if (this._results.length === this._workers.length) {
+
+		end = (new Date()).getTime();
+		LOG = PQ.DEBUG ? log('averaging completed in ' + 
+			(end - this._computeStart) + 'ms.') : 0;
 
 		// Protect ourselves from bad callback functions.
 		try {
